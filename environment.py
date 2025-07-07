@@ -11,3 +11,19 @@ class Connect4Board:
 
     def gridMaker(self):
         print()
+
+    def checkWin(self, CONNECT_TARGET, row, col, piece):
+
+        # Check horizontally
+
+
+        # Check vertically
+
+
+        # Check diagnolly
+
+
+
+
+        return False
+
