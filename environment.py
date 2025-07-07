@@ -10,4 +10,29 @@ class Connect4Board:
         self.grid = self.gridMaker()
 
     def gridMaker(self):
-        print()
+        grid = []
+        for i in range(self.rows):
+            row = []
+            for j in range(self.columns):
+                row.append(EMPTY_SPACE)
+            grid.append(row)
+        return grid
+    
+    def placePlayerPiece(self, selectedColumn, playerPiece):
+        if (selectedColumn < 0 or selectedColumn >= self.columns):
+            print("OUT OF RANGE")
+        else:
+            rows = self.rows - 1
+            for row in range(rows, -1, -1):
+                if self.grid[row][selectedColumn] == EMPTY_SPACE:
+                    self.grid[row][selectedColumn] = playerPiece
+                    return row
+    
+    def printConnect4Board(self):
+        for row in self.grid:
+            print(row)
+
+board = Connect4Board(columns = 7, rows = 6)
+board.placePlayerPiece(2, 1)
+board.placePlayerPiece(3, 2)
+board.printConnect4Board()
