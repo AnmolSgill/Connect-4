@@ -28,9 +28,14 @@ class Connect4Board:
                     self.grid[row][selectedColumn] = playerPiece
                     return row
     
-    def printConnect4Board(self):
-        for row in self.grid:
-            print(row)
+    def getColumns(self):
+        return self.columns
+    
+    def getRow(self):
+        return self.rows
+    
+    def getGrid(self):
+        return self.grid
     
     def checkWin(self, CONNECT_TARGET, piece):
         
