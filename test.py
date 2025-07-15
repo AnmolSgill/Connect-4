@@ -29,6 +29,7 @@ def runMiniMax():
 
     
     winner = False
+    visits = 0
     
     while not winner:
         for p in game.players:
@@ -40,15 +41,16 @@ def runMiniMax():
                     game.printConnect4Board()
                     winner = True
             else:
-                _,i = miniMaxGame.minimax(grid.getGrid(),6,True)
-                        
+                _,i,visited = miniMaxGame.minimax(grid.getGrid(),6,True)
+                visits += visited 
+
                 placePiece = game.grid.placePlayerPiece(i, p.getPiece())
                 if game.grid.checkWin(CONNECT_TARGET, p.getPiece()):
                     print(p.getName())
                     game.printConnect4Board()
                     winner = True
     
-    return  
+    return visits
 
 
 def runAlphaBeta():
@@ -60,7 +62,8 @@ def runAlphaBeta():
 
     pruned = []
     winner = False
-    
+    visits = 0
+
     while not winner:
         for p in game.players:
             if p.getPiece() == 1:
@@ -72,7 +75,8 @@ def runAlphaBeta():
                     winner = True
             else:
                 _,i, visited = alphaBetaGame.alphaBetaPruning(grid.getGrid(),6,-999999999,999999999,True,pruned)
-                        
+                visits += visited
+
                 placePiece = game.grid.placePlayerPiece(i, p.getPiece())
                 if game.grid.checkWin(CONNECT_TARGET, p.getPiece()):
                     print(p.getName())
@@ -85,7 +89,7 @@ def runAlphaBeta():
         alphaBetaGame.generateBranch(prune[0],prune[1],prune[2],branch)
         restored.append(branch)
 
-    return restored 
+    return restored,visits
 
 def runExpectiminiMax():
     winner = False
@@ -95,6 +99,7 @@ def runExpectiminiMax():
     cols = game.grid.getColumns()
 
     expectiGame = AdversarialSearch(rows, cols)
+    visits = 0
 
     while not winner:
         
@@ -143,8 +148,9 @@ def runExpectiminiMax():
                     
 
                 else:
-                    _,i = expectiGame.expectiminiMax(grid.getGrid(),6,True,turns)
-                            
+                    _,i,visited = expectiGame.expectiminiMax(grid.getGrid(),6,True,turns)
+                    visits += visited 
+
                     placePiece = game.grid.placePlayerPiece(i, p.getPiece())
                 if game.grid.checkWin(CONNECT_TARGET, p.getPiece()):
                     print(p.getName())
@@ -152,17 +158,19 @@ def runExpectiminiMax():
                     winner = True
 
                 turns += 1
+    return visits 
+
 
 
 #before running tests have to comment out game.gameplay() in main
-#runExpectiminiMax()
+#visits = runExpectiminiMax()
 
-#runMiniMax()
+#visits = runMiniMax()
 
 #this will take a long time but it gets every branch that was pruned off
 #
 """
-a = runAlphaBeta()
+a,visits = runAlphaBeta()
 for grid in a:
     for row in grid:
         for col in row:
