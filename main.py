@@ -53,12 +53,17 @@ def run_game_vs_agent(player1_strategy, player2_strategy, rows, columns,algo):
     turn = 1
     winner = False
     visits = 0
-    pruning = []
+    
     adversary = AdversarialSearch(rows,columns)
 
     if algo == "expectiminimax":
         while not winner:     
             for p in game.players:
+
+                if len(adversary.getValidMoves(grid.getGrid())) == 0:
+                    print(f"Tie Game!")
+                    print(f"Visited Nodes: {visits}")
+                    return
 
                 if p.getPiece() == PLAYER1_PIECE:
 
@@ -80,7 +85,6 @@ def run_game_vs_agent(player1_strategy, player2_strategy, rows, columns,algo):
                     
                     else:
 
-
                         strategy = player2_strategy
                         move,visited = strategy(game, grid, p, turn)
                         visits += visited 
@@ -94,11 +98,7 @@ def run_game_vs_agent(player1_strategy, player2_strategy, rows, columns,algo):
                     print(f"Visited Nodes: {visits}")
 
                     return visits
-                
-                if adversary.getValidMoves(grid.getGrid) == 0:
-                    print(f"Tie Game!")
-                    return
-
+                    
                 turn += 1
     
     if algo == "alphabeta":
@@ -106,6 +106,12 @@ def run_game_vs_agent(player1_strategy, player2_strategy, rows, columns,algo):
 
         while not winner:     
             for p in game.players:
+
+                if len(adversary.getValidMoves(grid.getGrid())) == 0:
+                    print(f"Tie Game!")
+                    print(f"Visited Nodes: {visits} \nPruned Nodes: {len(pruned)}")
+                    
+                    return
 
                 if p.getPiece() == PLAYER1_PIECE:
 
@@ -128,16 +134,16 @@ def run_game_vs_agent(player1_strategy, player2_strategy, rows, columns,algo):
                     print(f"Visited Nodes: {visits} \nPruned Nodes: {len(pruned)}")
                     return 
                 
-                if adversary.getValidMoves(grid.getGrid) == 0:
-                    print(f"Tie Game!")
-                    return
-
-
                 turn += 1
     
     if algo == "minimax":
         while not winner:     
             for p in game.players:
+
+                if len(adversary.getValidMoves(grid.getGrid())) == 0:
+                    print(f"Tie Game!")
+                    print(f"Visited Nodes: {visits}")
+                    return
 
                 if p.getPiece() == PLAYER1_PIECE:
 
@@ -159,9 +165,6 @@ def run_game_vs_agent(player1_strategy, player2_strategy, rows, columns,algo):
                     print(f"Visited Nodes: {visits}")
                     return 
                 
-                if adversary.getValidMoves(grid.getGrid) == 0:
-                    print(f"Tie Game!")
-                    return
 
                 turn += 1
         
