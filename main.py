@@ -40,9 +40,13 @@ class Game:
             except ValueError:
                 print("Invalid input. Try again.")
 
-def run_game(player1_strategy, player2_strategy):
-    grid = Connect4Board(6, 7)
+def setup_game(rows, columns):
+    grid = Connect4Board(columns, rows)
     game = Game(grid)
+    return grid, game
+
+def run_game(player1_strategy, player2_strategy, rows, columns):
+    grid, game = setup_game(rows, columns)
     turn = 0
     winner = False
 
@@ -96,14 +100,14 @@ def main_menu():
 
     if choice in {"1", "2", "3"}:
         algo = {"1": "minimax", "2": "alphabeta", "3": "expectiminimax"}[choice]
-        run_game(human_strategy, ai_strategy(algo))
+        run_game(human_strategy, ai_strategy(algo), 6, 7)
     elif choice == "4":
         difficulty = input("Gemini difficulty (easy / medium / hard): ").strip().lower()
-        run_game(human_strategy, gemini_strategy(difficulty))
+        run_game(human_strategy, gemini_strategy(difficulty), 6, 7)
     elif choice in {"5", "6", "7"}:
         difficulty = input("Gemini difficulty (easy / medium / hard): ").strip().lower()
         algo = {"5": "minimax", "6": "alphabeta", "7": "expectiminimax"}[choice]
-        run_game(gemini_strategy(difficulty), ai_strategy(algo))
+        run_game(gemini_strategy(difficulty), ai_strategy(algo), 6, 7)
     else:
         print("Invalid choice.")
 
