@@ -73,15 +73,14 @@ def gemini_strategy(difficulty):
     return strategy
 
 def ai_strategy(algorithm):
-    def strategy(grid_obj, grid, player, turn):
-        ai = AdversarialSearch(grid_obj.getRow(), grid_obj.getColumns())
-
+    def strategy(game, grid, player, turn):
+        ai = AdversarialSearch(grid.getRow(), grid.getColumns())
         if algorithm == "minimax":
-            _, move, _ = ai.minimax(grid, 6, True)
+            _, move, _ = ai.minimax(grid.getGrid(), 6, True)
         elif algorithm == "alphabeta":
-            _, move, _ = ai.alphaBetaPruning(grid, 6, -999999999, 999999999, True, [])
+            _, move, _ = ai.alphaBetaPruning(grid.getGrid(), 6, -999999999, 999999999, True, [])
         elif algorithm == "expectiminimax":
-            _, move, _ = ai.expectiminiMax(grid, 6, True, turn)
+            _, move, _ = ai.expectiminiMax(grid.getGrid(), 6, True, turn)
         else:
             raise ValueError("Invalid AI algorithm")
         return move

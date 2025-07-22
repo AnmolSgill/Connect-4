@@ -64,5 +64,5 @@ class GeminiAgent:
             f"You are Player {self.piece} in Connect-4.\n"
             f"The current 6x7 board (0 = empty, 1 = Player 1, 2 = Player 2):\n{board_str}\n\n"
             #f"{difficulty_instruction}\n"
-            #"ONLY respond with the best column number (0-5) to drop your piece."
+            #"ONLY respond with the best column number (0-6) to drop your piece."
         )
