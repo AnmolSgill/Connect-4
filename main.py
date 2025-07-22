@@ -215,6 +215,9 @@ def gemini_strategy(difficulty):
 def ai_strategy(algorithm):
     def strategy(game, grid, player, turn, pruned = None):
         ai = AdversarialSearch(grid.getRow(), grid.getColumns())
+        if pruned is None:
+            pruned = [] 
+            
         if algorithm == "minimax":
             _, move, visited = ai.minimax(grid.getGrid(), 6, True,2,1)
         elif algorithm == "alphabeta":

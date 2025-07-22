@@ -4,12 +4,8 @@ from main import setup_game, human_strategy, ai_strategy, gemini_strategy
 from environment import PLAYER1_PIECE, PLAYER2_PIECE, EMPTY_SPACE, CONNECT_TARGET
 
 # Game config
-ROWS, COLS = 6, 7
 SQUARESIZE = 100
 RADIUS = int(SQUARESIZE / 2 - 5)
-WIDTH = COLS * SQUARESIZE
-HEIGHT = (ROWS + 2) * SQUARESIZE  # +2 for message space
-SIZE = (WIDTH, HEIGHT)
 
 # Colors
 BLUE = (0, 0, 255)
@@ -22,10 +18,11 @@ pygame.init()
 FONT = pygame.font.SysFont("monospace", 40)
 SMALL_FONT = pygame.font.SysFont("monospace", 30)
 
-def draw_board(screen, grid, message=""):
+def draw_board(screen, grid_obj, rows, cols, message=""):
+    grid = grid_obj.getGrid()
     screen.fill(BLACK)
-    for c in range(COLS):
-        for r in range(ROWS):
+    for c in range(cols):
+        for r in range(rows):
             pygame.draw.rect(screen, BLUE, (c * SQUARESIZE, (r + 1) * SQUARESIZE, SQUARESIZE, SQUARESIZE))
             color = BLACK
             if grid[r][c] == PLAYER1_PIECE:
@@ -40,7 +37,7 @@ def draw_board(screen, grid, message=""):
 
     pygame.display.update()
 
-def show_menu(screen):
+def show_menu(screen, height):
     options = [
         "1 - Player vs Minimax",
         "2 - Player vs Alpha-Beta",
@@ -54,7 +51,7 @@ def show_menu(screen):
     menu_font = pygame.font.SysFont("monospace", 30)
     selected_idx = -1
     spacing = 40
-    top_margin = (HEIGHT - len(options) * spacing) // 2
+    top_margin = (height - len(options) * spacing) // 2
 
     running = True
     while running:
@@ -79,13 +76,13 @@ def show_menu(screen):
             elif event.type == pygame.MOUSEBUTTONDOWN and selected_idx != -1:
                 return selected_idx + 1
 
-def select_difficulty(screen):
+def select_difficulty(screen, height):
     difficulties = ["easy", "medium", "hard"]
     selected_idx = -1
     spacing = 50
     menu_font = pygame.font.SysFont("monospace", 30)
     title_font = pygame.font.SysFont("monospace", 36)
-    top_margin = (HEIGHT - len(difficulties) * spacing) // 2
+    top_margin = (height - len(difficulties) * spacing) // 2
 
     while True:
         screen.fill(BLACK)
@@ -112,18 +109,20 @@ def select_difficulty(screen):
             elif event.type == pygame.MOUSEBUTTONDOWN and selected_idx != -1:
                 return difficulties[selected_idx]
 
-def gui_game(player1_tuple, player2_tuple):
+def gui_game(player1_tuple, player2_tuple, rows, cols):
     player1_strategy, player1_label = player1_tuple
     player2_strategy, player2_label = player2_tuple
 
-    screen = pygame.display.set_mode(SIZE)
+    grid, game = setup_game(rows, cols)
+    width = cols * SQUARESIZE
+    height = (rows + 2) * SQUARESIZE
+    screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption("Connect-4 AI Game")
 
-    grid, game = setup_game(ROWS, COLS)
     turn = 0
     game_over = False
 
-    draw_board(screen, grid.getGrid(), "Game Start!")
+    draw_board(screen, grid, rows, cols, "Game Start!")
 
     while not game_over:
         for event in pygame.event.get():
@@ -137,7 +136,7 @@ def gui_game(player1_tuple, player2_tuple):
         player_name = f"Player {1 if current_player == PLAYER1_PIECE else 2}"
 
         if strategy == human_strategy:
-            draw_board(screen, grid.getGrid(), f"{player_name}'s Turn (You)")
+            draw_board(screen, grid, rows, cols, f"{player_name}'s Turn (You)")
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -148,34 +147,44 @@ def gui_game(player1_tuple, player2_tuple):
                     if grid.getGrid()[0][col] == EMPTY_SPACE:
                         grid.placePlayerPiece(col, current_player)
                         if grid.checkWin(CONNECT_TARGET, current_player):
-                            draw_board(screen, grid.getGrid(), f"{player_name} wins!")
+                            draw_board(screen, grid, rows, cols, f"{player_name} wins!")
+                            game_over = True
+                        elif not any(EMPTY_SPACE in row for row in grid.getGrid()):
+                            draw_board(screen, grid, rows, cols, "Tie Game!")
                             game_over = True
                         else:
-                            draw_board(screen, grid.getGrid(), "")
+                            draw_board(screen, grid, rows, cols, "")
                         turn += 1
         else:
-            draw_board(screen, grid.getGrid(), f"{player_name}'s Turn ({label})")
+            draw_board(screen, grid, rows, cols, f"{player_name}'s Turn ({label})")
             pygame.time.wait(800)
-            move = strategy(game, grid, game.players[turn % 2], turn)
+            result = strategy(game, grid, game.players[turn % 2], turn)
+            move = result if isinstance(result, int) else result[0]
             if move is not None and grid.getGrid()[0][move] == EMPTY_SPACE:
                 grid.placePlayerPiece(move, current_player)
                 if grid.checkWin(CONNECT_TARGET, current_player):
-                    draw_board(screen, grid.getGrid(), f"{player_name} wins!")
+                    draw_board(screen, grid, rows, cols, f"{player_name} wins!")
+                    game_over = True
+                elif not any(EMPTY_SPACE in row for row in grid.getGrid()):
+                    draw_board(screen, grid, rows, cols, "Tie Game!")
                     game_over = True
                 else:
-                    draw_board(screen, grid.getGrid(), "")
+                    draw_board(screen, grid, rows, cols, "")
                 turn += 1
 
         if game_over:
             pygame.time.wait(3000)
 
 if __name__ == "__main__":
-    screen = pygame.display.set_mode(SIZE)
-    pygame.display.set_caption("Connect-4 Mode Selection")
-    choice = show_menu(screen)
+    rows, columns = 6, 7  # Set board size
+
+    temp_screen = pygame.display.set_mode((800, 600))
+    pygame.display.set_caption("Connect-4 Settings")
+
+    choice = show_menu(temp_screen, 600)
 
     if choice in {4, 5, 6, 7}:
-        difficulty = select_difficulty(screen)
+        difficulty = select_difficulty(temp_screen, 600)
     else:
         difficulty = "hard"
 
@@ -190,4 +199,4 @@ if __name__ == "__main__":
     }
 
     player1, player2 = strategies[choice]
-    gui_game(player1, player2)
+    gui_game(player1, player2, rows, columns)
