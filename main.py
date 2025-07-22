@@ -49,17 +49,32 @@ def run_game(player1_strategy, player2_strategy, rows, columns):
     grid, game = setup_game(rows, columns)
     turn = 0
     winner = False
+    visits = 0
 
     while not winner:
         for p in game.players:
-            strategy = player1_strategy if p.getPiece() == PLAYER1_PIECE else player2_strategy
-            move = strategy(game, grid, p, turn)
+
+            if p.getPiece() == PLAYER1_PIECE:
+
+                strategy = player1_strategy
+                move = strategy(game, grid, p, turn)
+
+            else:
+                strategy = player2_strategy
+                move,visited = strategy(game, grid, p, turn)
+                visits += visited 
+                print(move,turn)
+
             grid.placePlayerPiece(move, p.getPiece()) if move is not None else None
+            
+            
+
             if grid.checkWin(CONNECT_TARGET, p.getPiece()):
                 game.printConnect4Board()
                 print(f"\n{p.getName()} wins!")
                 winner = True
                 break
+
             turn += 1
 
 def human_strategy(game, grid, player, turn):
@@ -73,17 +88,19 @@ def gemini_strategy(difficulty):
     return strategy
 
 def ai_strategy(algorithm):
+    
     def strategy(game, grid, player, turn):
         ai = AdversarialSearch(grid.getRow(), grid.getColumns())
         if algorithm == "minimax":
-            _, move, _ = ai.minimax(grid.getGrid(), 6, True)
+            _, move, visited = ai.minimax(grid.getGrid(), 6, True,2,1)
         elif algorithm == "alphabeta":
-            _, move, _ = ai.alphaBetaPruning(grid.getGrid(), 6, -999999999, 999999999, True, [])
+            _, move, visited = ai.alphaBetaPruning(grid.getGrid(), 6, -999999999, 999999999, True,2,1, [])
         elif algorithm == "expectiminimax":
-            _, move, _ = ai.expectiminiMax(grid.getGrid(), 6, True, turn)
+            _, move, visited = ai.expectiminiMax(grid.getGrid(), 6, True, turn,2,1)
         else:
             raise ValueError("Invalid AI algorithm")
-        return move
+        return move, visited
+
     return strategy
 
 def main_menu():
