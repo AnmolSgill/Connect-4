@@ -167,7 +167,7 @@ class AdversarialSearch:
         return score
 
 
-    def minimax(self,currentGrid, depth, isMaximizingPlayer):
+    def minimax(self,currentGrid, depth, isMaximizingPlayer,maxPiece,minPiece):
 
         #tracks number of visited nodes for performance checking
         visited = 1
@@ -176,15 +176,15 @@ class AdversarialSearch:
         if (self.isTerminalState(currentGrid) or depth == 0):
             
             if(self.isTerminalState(currentGrid)):
-                if self.checkWin(currentGrid,2):
+                if self.checkWin(currentGrid,maxPiece):
                     return 999999999, None, visited
-                elif self.checkWin(currentGrid,1):
+                elif self.checkWin(currentGrid,minPiece):
                     return -999999999, None, visited
                 else:
                     return 0,None, visited
             else:
                 #get utility wrt AI
-                return self.utilityFunction(currentGrid,2), None, visited
+                return self.utilityFunction(currentGrid,maxPiece), None, visited
 
 
         if (isMaximizingPlayer):
@@ -195,9 +195,9 @@ class AdversarialSearch:
             for move in self.getValidMoves(currentGrid):
 
                 # assuming AI only plays as player 2
-                child = self.makeMove(currentGrid, 2, move)
+                child = self.makeMove(currentGrid, maxPiece, move)
 
-                value , x, nodesVisited = self.minimax(child,depth-1,False)
+                value , x, nodesVisited = self.minimax(child,depth-1,False,maxPiece,minPiece)
 
                 visited += nodesVisited
 
@@ -214,9 +214,9 @@ class AdversarialSearch:
             for move in self.getValidMoves(currentGrid):
 
                 # assuming non AI only plays as player 1
-                child = self.makeMove(currentGrid, 1, move)
+                child = self.makeMove(currentGrid, minPiece, move)
 
-                value, x, nodesVisited = self.minimax(child,depth-1,True)
+                value, x, nodesVisited = self.minimax(child,depth-1,True,maxPiece,minPiece)
                 
                 visited += nodesVisited
 
@@ -227,7 +227,7 @@ class AdversarialSearch:
             return bestValue, bestMove, visited
 
     #used in A/B pruning to restore branches
-    def generateBranch(self, prunedGrid, depthPruned, wasMaximizer, restoredBranch):
+    def generateBranch(self, prunedGrid, depthPruned, wasMaximizer,maxPiece,minPiece, restoredBranch):
 
         if depthPruned <= 0 or self.checkWin(prunedGrid,1) or self.checkWin(prunedGrid,2):
             restoredBranch.append(prunedGrid)
@@ -241,9 +241,9 @@ class AdversarialSearch:
             for move in self.getValidMoves(prunedGrid):
 
                 # assuming AI only plays as player 2
-                child = self.makeMove(prunedGrid, 2, move)
+                child = self.makeMove(prunedGrid, maxPiece, move)
 
-                value, _,_ = self.minimax(child,depthPruned-1,False)
+                value, _,_ = self.minimax(child,depthPruned-1,False,maxPiece,minPiece)
 
                 restoredBranch.append(child)
 
@@ -259,9 +259,9 @@ class AdversarialSearch:
             for move in self.getValidMoves(prunedGrid):
 
                 # assuming non AI only plays as player 1
-                child = self.makeMove(prunedGrid, 1, move)
+                child = self.makeMove(prunedGrid, minPiece, move)
 
-                value, _, _ = self.minimax(child,depthPruned-1,True)
+                value, _, _ = self.minimax(child,depthPruned-1,True,maxPiece,minPiece)
 
                 if value < bestValue:
                     bestValue = value
@@ -272,22 +272,22 @@ class AdversarialSearch:
 
     # the pruned array will be an array where each value is another array in form [pruned child, depth, player]
     # will use the generate tree to get the branch that was pruned off from using AB pruning 
-    def alphaBetaPruning(self, currentGrid, depth, alpha, beta, isMaximizingPlayer, pruned):
+    def alphaBetaPruning(self, currentGrid, depth, alpha, beta, isMaximizingPlayer, maxPiece,minPiece, pruned):
         
         visited = 1
 
         if (self.isTerminalState(currentGrid) or depth == 0):
             #AI won
             if(self.isTerminalState(currentGrid)):
-                if self.checkWin(currentGrid,2):
+                if self.checkWin(currentGrid,maxPiece):
                     return 999999999, None, visited
-                elif self.checkWin(currentGrid,1):
+                elif self.checkWin(currentGrid,minPiece):
                     return -999999999, None, visited
                 else:
                     return 0,None, visited
             else:
                 #get utility wrt AI
-                return self.utilityFunction(currentGrid,2), None, visited
+                return self.utilityFunction(currentGrid,maxPiece), None, visited
 
         if (isMaximizingPlayer):
 
@@ -298,9 +298,9 @@ class AdversarialSearch:
             for i in range(len(moves)):
 
                 # assuming AI only plays as player 2
-                child = self.makeMove(currentGrid, 2, moves[i])
+                child = self.makeMove(currentGrid, maxPiece, moves[i])
 
-                value,_, childNodes = self.alphaBetaPruning(child,depth-1,alpha,beta,False,pruned)
+                value,_, childNodes = self.alphaBetaPruning(child,depth-1,alpha,beta,False,maxPiece,minPiece, pruned)
                 visited += childNodes
 
                 if value > bestValue:
@@ -312,10 +312,10 @@ class AdversarialSearch:
                 #prune rest of children
                 if alpha >= beta:
                     #used for visualizing later
-                    for child in self.getChildren(currentGrid, 2, moves[i+1:]):
+                    for child in self.getChildren(currentGrid, maxPiece, moves[i+1:]):
 
                         #assuming it went to child, it would be the minimizing turn
-                        pruned.append([child, depth-1, False])
+                        pruned.append([child, depth-1, False,maxPiece,minPiece])
 
                     break
 
@@ -329,9 +329,9 @@ class AdversarialSearch:
             for i in range(len(moves)):
 
                 # assuming non AI only plays as player 1
-                child = self.makeMove(currentGrid, 1, moves[i])
+                child = self.makeMove(currentGrid, minPiece, moves[i])
 
-                value,_, childNodes = self.alphaBetaPruning(child,depth-1,alpha,beta,True,pruned)
+                value,_, childNodes = self.alphaBetaPruning(child,depth-1,alpha,beta,True,maxPiece,minPiece,pruned)
                 visited+= childNodes
 
                 if value < bestValue:
@@ -342,10 +342,10 @@ class AdversarialSearch:
 
                 if beta <= alpha:
                     #used for visualizing later
-                    for child in self.getChildren(currentGrid, 1, moves[i+1:]):
+                    for child in self.getChildren(currentGrid, minPiece, moves[i+1:]):
 
                         #assuming it went to child, it would be maximizing turn
-                        pruned.append([child, depth-1, True])
+                        pruned.append([child, depth-1, True,maxPiece,minPiece])
 
                     break
 
@@ -357,22 +357,22 @@ class AdversarialSearch:
         return turnNumber%4==0 or turnNumber%4 ==3
         
 
-    def expectiminiMax(self,currentGrid, depth, isMaximizingPlayer,turnNumber):
+    def expectiminiMax(self,currentGrid, depth, isMaximizingPlayer,turnNumber, maxPiece, minPiece):
 
         visited = 1
         
         if depth <= 0 or self.isTerminalState(currentGrid):
             #AI won
             if(self.isTerminalState(currentGrid)):
-                if self.checkWin(currentGrid,2):
+                if self.checkWin(currentGrid,maxPiece):
                     return 999999999, None, visited
-                elif self.checkWin(currentGrid,1):
+                elif self.checkWin(currentGrid, minPiece):
                     return -999999999, None, visited
                 else:
                     return 0,None, visited
             else:
                 #get utility wrt AI
-                return self.utilityFunction(currentGrid,2), None, visited
+                return self.utilityFunction(currentGrid,maxPiece), None, visited
         
         if self.isChanceNode(turnNumber):
 
@@ -385,8 +385,8 @@ class AdversarialSearch:
                 prob = 1/len(moves)
 
                 for i in range(len(moves)):
-                    child = self.makeMove(currentGrid,2, moves[i])
-                    value,_, childVisits = self.expectiminiMax(child,depth-1,False,turnNumber+1)
+                    child = self.makeMove(currentGrid,maxPiece, moves[i])
+                    value,_, childVisits = self.expectiminiMax(child,depth-1,False,turnNumber+1,maxPiece,minPiece)
                     expectedValue += value*prob
                     visited += childVisits
                 
@@ -397,8 +397,8 @@ class AdversarialSearch:
                 moves = self.getValidMoves(currentGrid)
                 prob = 1/len(moves)
                 for i in range(len(moves)):
-                    child = self.makeMove(currentGrid,1, moves[i])
-                    value,_, childVisits = self.expectiminiMax(child,depth-1,True,turnNumber+1)
+                    child = self.makeMove(currentGrid,minPiece, moves[i])
+                    value,_, childVisits = self.expectiminiMax(child,depth-1,True,turnNumber+1,maxPiece,minPiece)
                     expectedValue += value*prob
                     visited += childVisits
                 
@@ -414,9 +414,9 @@ class AdversarialSearch:
             for i in range(len(moves)):
                 
 
-                child = self.makeMove(currentGrid, 2, moves[i])
+                child = self.makeMove(currentGrid, maxPiece, moves[i])
 
-                value,_, childVisits = self.expectiminiMax(child,depth-1,False,turnNumber+1)
+                value,_, childVisits = self.expectiminiMax(child,depth-1,False,turnNumber+1,maxPiece,minPiece)
                 visited += childVisits
 
                 if value > bestValue:
@@ -433,9 +433,9 @@ class AdversarialSearch:
 
             for i in range(len(moves)):
 
-                child = self.makeMove(currentGrid, 1, moves[i])
+                child = self.makeMove(currentGrid, minPiece, moves[i])
 
-                value,_, childVisits = self.expectiminiMax(child,depth-1,True,turnNumber+1)
+                value,_, childVisits = self.expectiminiMax(child,depth-1,True,turnNumber+1,maxPiece,minPiece)
                 visited += childVisits
 
                 if value < bestValue:
