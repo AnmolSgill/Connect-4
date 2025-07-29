@@ -2,6 +2,8 @@ import pygame
 import sys
 from main import setup_game, human_strategy, ai_strategy, gemini_strategy
 from environment import PLAYER1_PIECE, PLAYER2_PIECE, EMPTY_SPACE, CONNECT_TARGET
+from minimax import AdversarialSearch
+from random import randint
 
 # Game config
 SQUARESIZE = 100
@@ -121,7 +123,7 @@ def gui_game(player1_tuple, player2_tuple, rows, cols):
 
     turn = 0
     game_over = False
-
+    pruned = []
     draw_board(screen, grid, rows, cols, "Game Start!")
 
     while not game_over:
@@ -135,6 +137,8 @@ def gui_game(player1_tuple, player2_tuple, rows, cols):
         label = player1_label if current_player == PLAYER1_PIECE else player2_label
         player_name = f"Player {1 if current_player == PLAYER1_PIECE else 2}"
 
+        
+
         if strategy == human_strategy:
             draw_board(screen, grid, rows, cols, f"{player_name}'s Turn (You)")
             for event in pygame.event.get():
@@ -147,10 +151,17 @@ def gui_game(player1_tuple, player2_tuple, rows, cols):
                     if grid.getGrid()[0][col] == EMPTY_SPACE:
                         grid.placePlayerPiece(col, current_player)
                         if grid.checkWin(CONNECT_TARGET, current_player):
-                            draw_board(screen, grid, rows, cols, f"{player_name} wins!")
+                            if len(pruned)> 0:
+                                draw_board(screen, grid, rows, cols, f"{player_name} wins! Pruned: {len(pruned)}")
+                            else:
+                                draw_board(screen, grid, rows, cols, f"{player_name} wins!")
+                            
                             game_over = True
                         elif not any(EMPTY_SPACE in row for row in grid.getGrid()):
-                            draw_board(screen, grid, rows, cols, "Tie Game!")
+                            if len(pruned)> 0:
+                                draw_board(screen, grid, rows, cols, f"Tie Game! Pruned: {len(pruned)}")
+                            else:
+                                draw_board(screen, grid, rows, cols, "Tie Game!")
                             game_over = True
                         else:
                             draw_board(screen, grid, rows, cols, "")
@@ -158,19 +169,143 @@ def gui_game(player1_tuple, player2_tuple, rows, cols):
         else:
             draw_board(screen, grid, rows, cols, f"{player_name}'s Turn ({label})")
             pygame.time.wait(800)
-            result = strategy(game, grid, game.players[turn % 2], turn)
+            if label == "Alpha-Beta":
+                result = strategy(game, grid, game.players[turn % 2], turn,pruned)
+            else:
+                result = strategy(game, grid, game.players[turn % 2], turn)
+
             move = result if isinstance(result, int) else result[0]
             if move is not None and grid.getGrid()[0][move] == EMPTY_SPACE:
                 grid.placePlayerPiece(move, current_player)
                 if grid.checkWin(CONNECT_TARGET, current_player):
-                    draw_board(screen, grid, rows, cols, f"{player_name} wins!")
+                    if len(pruned)> 0:
+                        draw_board(screen, grid, rows, cols, f"{player_name} wins! Pruned: {len(pruned)}")
+                    else:
+                        draw_board(screen, grid, rows, cols, f"{player_name} wins!")
                     game_over = True
                 elif not any(EMPTY_SPACE in row for row in grid.getGrid()):
-                    draw_board(screen, grid, rows, cols, "Tie Game!")
+                    if len(pruned)> 0:
+                        draw_board(screen, grid, rows, cols, f"Tie Game! Pruned: {len(pruned)}")
+                    else:
+                        draw_board(screen, grid, rows, cols, "Tie Game!")
                     game_over = True
                 else:
                     draw_board(screen, grid, rows, cols, "")
                 turn += 1
+
+        if game_over:
+            pygame.time.wait(3000)
+
+def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
+    player1_strategy, player1_label = player1_tuple
+    player2_strategy, player2_label = player2_tuple
+
+    grid, game = setup_game(rows, cols)
+    width = cols * SQUARESIZE
+    height = (rows + 2) * SQUARESIZE
+    screen = pygame.display.set_mode((width, height))
+    pygame.display.set_caption("Connect-4 AI Game")
+
+    turn = 1
+    game_over = False
+    adversary = AdversarialSearch(rows,columns)
+
+    draw_board(screen, grid, rows, cols, "Game Start!")
+
+    while not game_over:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        current_player = PLAYER1_PIECE if turn % 2 == 1 else PLAYER2_PIECE
+        strategy = player1_strategy if current_player == PLAYER1_PIECE else player2_strategy
+        label = player1_label if current_player == PLAYER1_PIECE else player2_label
+        player_name = f"Player {1 if current_player == PLAYER1_PIECE else 2}"
+
+        
+
+        if strategy == human_strategy:
+
+            if (current_player == PLAYER1_PIECE and turn%4 == 3) or (current_player == PLAYER2_PIECE and turn%4 == 0):
+                draw_board(screen, grid, rows, cols, f"{player_name}'s Random Move! ({label})")
+                moves = adversary.getValidMoves(grid.getGrid())
+                i = randint(0,len(moves)-1)
+                grid.placePlayerPiece(moves[i],current_player)
+                pygame.time.wait(2000)
+                turn += 1
+
+                if grid.checkWin(CONNECT_TARGET, current_player):
+                        
+                    draw_board(screen, grid, rows, cols, f"{player_name} wins!")
+                    game_over = True
+                elif not any(EMPTY_SPACE in row for row in grid.getGrid()):
+                        
+                    draw_board(screen, grid, rows, cols, "Tie Game!")
+                    game_over = True
+                    
+            draw_board(screen, grid, rows, cols, f"{player_name}'s Turn (You)")
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    posx = event.pos[0]
+                    col = int(posx / SQUARESIZE)
+                    if grid.getGrid()[0][col] == EMPTY_SPACE:
+                        grid.placePlayerPiece(col, current_player)
+                        if grid.checkWin(CONNECT_TARGET, current_player):
+                            draw_board(screen, grid, rows, cols, f"{player_name} wins!")
+                            
+                            game_over = True
+                        elif not any(EMPTY_SPACE in row for row in grid.getGrid()):
+                        
+                            draw_board(screen, grid, rows, cols, "Tie Game!")
+                            game_over = True
+                        else:
+                            draw_board(screen, grid, rows, cols, "")
+                        turn += 1
+        else:
+
+            if (current_player == PLAYER1_PIECE and turn%4 == 3) or (current_player == PLAYER2_PIECE and turn%4 == 0):
+                draw_board(screen, grid, rows, cols, f"{player_name}'s Random Move! ({label})")
+                moves = adversary.getValidMoves(grid.getGrid())
+                i = randint(0,len(moves)-1)
+                grid.placePlayerPiece(moves[i],current_player)
+                pygame.time.wait(2000)
+                turn += 1
+
+                if grid.checkWin(CONNECT_TARGET, current_player):
+                        
+                    draw_board(screen, grid, rows, cols, f"{player_name} wins!")
+                    game_over = True
+                elif not any(EMPTY_SPACE in row for row in grid.getGrid()):
+                        
+                    draw_board(screen, grid, rows, cols, "Tie Game!")
+                    game_over = True
+
+
+            
+            else:
+                draw_board(screen, grid, rows, cols, f"{player_name}'s Turn ({label})")
+                pygame.time.wait(800)
+                
+                result = strategy(game, grid, game.players[turn % 2], turn)
+
+                move = result if isinstance(result, int) else result[0]
+                if move is not None and grid.getGrid()[0][move] == EMPTY_SPACE:
+                    grid.placePlayerPiece(move, current_player)
+                    if grid.checkWin(CONNECT_TARGET, current_player):
+                        
+                        draw_board(screen, grid, rows, cols, f"{player_name} wins!")
+                        game_over = True
+                    elif not any(EMPTY_SPACE in row for row in grid.getGrid()):
+                        
+                        draw_board(screen, grid, rows, cols, "Tie Game!")
+                        game_over = True
+                    else:
+                        draw_board(screen, grid, rows, cols, "")
+                    turn += 1
 
         if game_over:
             pygame.time.wait(3000)
@@ -199,4 +334,8 @@ if __name__ == "__main__":
     }
 
     player1, player2 = strategies[choice]
-    gui_game(player1, player2, rows, columns)
+    
+    if choice in {3,7}:
+        stochastic_gui_game(player1, player2, rows, columns)
+    else:
+        gui_game(player1, player2, rows, columns)
