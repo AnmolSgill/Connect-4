@@ -98,8 +98,12 @@ def run_game_vs_agent(player1_strategy, player2_strategy, rows, columns,algo):
                     print(f"Visited Nodes: {visits}")
 
                     return visits
-                    
-                turn += 1
+
+                turn +=1 
+                
+                
+
+                
     
     if algo == "alphabeta":
         pruned = []
@@ -135,6 +139,7 @@ def run_game_vs_agent(player1_strategy, player2_strategy, rows, columns,algo):
                     return 
                 
                 turn += 1
+                
     
     if algo == "minimax":
         while not winner:     
@@ -164,9 +169,12 @@ def run_game_vs_agent(player1_strategy, player2_strategy, rows, columns,algo):
                     winner = True
                     print(f"Visited Nodes: {visits}")
                     return 
-                
 
                 turn += 1
+                
+            
+
+                
         
     
 
@@ -218,23 +226,20 @@ def gemini_strategy(difficulty):
 def ai_strategy(algorithm):
     def strategy(game, grid, player, turn, pruned = None):
         ai = AdversarialSearch(grid.getRow(), grid.getColumns())
-        
-        if algorithm == "alphabeta":
-            if pruned is None:
-                pruned = []
-            _, move, visited = ai.alphaBetaPruning(grid.getGrid(), 6, -999999999, 999999999, True, 2, 1, pruned)
-            return move, visited
-
-        elif algorithm == "minimax":
-            _, move, visited = ai.minimax(grid.getGrid(), 6, True, 2, 1)
-            return move, visited
-
+        if algorithm == "minimax":
+            _, move, visited = ai.minimax(grid.getGrid(), 6, True,2,1)
+        elif algorithm == "alphabeta":
+            
+            _, move, visited = ai.alphaBetaPruning(grid.getGrid(), 6, -999999999, 999999999, True,2,1, pruned)
+            return move,visited
         elif algorithm == "expectiminimax":
-            _, move, visited = ai.expectiminiMax(grid.getGrid(), 6, True, turn, 2, 1)
-            return move, visited
-
+            _, move, visited = ai.expectiminiMax(grid.getGrid(), 6, True, turn,2,1)
         else:
             raise ValueError("Invalid AI algorithm")
+        
+        
+        return move, visited
+    
     
     return strategy
 
