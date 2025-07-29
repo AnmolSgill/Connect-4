@@ -194,7 +194,11 @@ def gui_game(player1_tuple, player2_tuple, rows, cols):
                 turn += 1
 
         if game_over:
-            pygame.time.wait(3000)
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
 
 def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
     player1_strategy, player1_label = player1_tuple
@@ -308,7 +312,11 @@ def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
                     turn += 1
 
         if game_over:
-            pygame.time.wait(3000)
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
 
 if __name__ == "__main__":
     rows, columns = 6, 7  # Set board size
