@@ -1,10 +1,8 @@
 from environment import *
-#from main import *
 from copy import deepcopy
 from random import randint
 
-#columns = grid.getColumns()
-#rows = grid.getRow()
+
 
 #Utility values
 FOURS = 999999
