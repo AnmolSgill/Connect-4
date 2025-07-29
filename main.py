@@ -218,23 +218,23 @@ def gemini_strategy(difficulty):
 def ai_strategy(algorithm):
     def strategy(game, grid, player, turn, pruned = None):
         ai = AdversarialSearch(grid.getRow(), grid.getColumns())
-        if pruned is None:
-            pruned = [] 
-            
-        if algorithm == "minimax":
-            _, move, visited = ai.minimax(grid.getGrid(), 6, True,2,1)
-        elif algorithm == "alphabeta":
-            
-            _, move, visited = ai.alphaBetaPruning(grid.getGrid(), 6, -999999999, 999999999, True,2,1, pruned)
-            return move,visited
+        
+        if algorithm == "alphabeta":
+            if pruned is None:
+                pruned = []
+            _, move, visited = ai.alphaBetaPruning(grid.getGrid(), 6, -999999999, 999999999, True, 2, 1, pruned)
+            return move, visited
+
+        elif algorithm == "minimax":
+            _, move, visited = ai.minimax(grid.getGrid(), 6, True, 2, 1)
+            return move, visited
+
         elif algorithm == "expectiminimax":
-            _, move, visited = ai.expectiminiMax(grid.getGrid(), 6, True, turn,2,1)
+            _, move, visited = ai.expectiminiMax(grid.getGrid(), 6, True, turn, 2, 1)
+            return move, visited
+
         else:
             raise ValueError("Invalid AI algorithm")
-        
-        
-        return move, visited
-    
     
     return strategy
 
