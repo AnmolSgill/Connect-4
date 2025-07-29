@@ -5,40 +5,47 @@ from environment import PLAYER1_PIECE, PLAYER2_PIECE, EMPTY_SPACE, CONNECT_TARGE
 from minimax import AdversarialSearch
 from random import randint
 
-# Game config
+#constants for graphical display
 SQUARESIZE = 100
 RADIUS = int(SQUARESIZE / 2 - 5)
 
-# Colors
+#RGB color definitions
 BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
 WHITE = (255, 255, 255)
 
+#initialize pygame and fonts
 pygame.init()
 FONT = pygame.font.SysFont("monospace", 40)
 SMALL_FONT = pygame.font.SysFont("monospace", 30)
 
+#draws the current game board on the screen with optional messages
 def draw_board(screen, grid_obj, rows, cols, message=""):
     grid = grid_obj.getGrid()
     screen.fill(BLACK)
     for c in range(cols):
         for r in range(rows):
+            #draw the board background grid
             pygame.draw.rect(screen, BLUE, (c * SQUARESIZE, (r + 1) * SQUARESIZE, SQUARESIZE, SQUARESIZE))
+            #determine piece colour for each cell
             color = BLACK
             if grid[r][c] == PLAYER1_PIECE:
                 color = RED
             elif grid[r][c] == PLAYER2_PIECE:
                 color = YELLOW
+            #draw the circle for each piece
             pygame.draw.circle(screen, color, (int(c * SQUARESIZE + SQUARESIZE / 2), int((r + 1) * SQUARESIZE + SQUARESIZE / 2)), RADIUS)
 
+    #display optional message at the top
     if message:
         label = SMALL_FONT.render(message, 1, WHITE)
         screen.blit(label, (10, 10))
 
     pygame.display.update()
 
+#display the game mode selection menu
 def show_menu(screen, height):
     options = [
         "1 - Player vs Minimax",
@@ -63,6 +70,7 @@ def show_menu(screen, height):
         screen.fill(BLACK)
         mouse_pos = pygame.mouse.get_pos()
 
+        #render each menu option and detect mouse hover
         for i, option in enumerate(options):
             color = YELLOW if i == selected_idx else WHITE
             text = menu_font.render(option, True, color)
@@ -74,6 +82,7 @@ def show_menu(screen, height):
 
         pygame.display.update()
 
+        #return selected option on mouse click
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -81,6 +90,7 @@ def show_menu(screen, height):
             elif event.type == pygame.MOUSEBUTTONDOWN and selected_idx != -1:
                 return selected_idx + 1
 
+#menu to select Gemini difficulty
 def select_difficulty(screen, height):
     difficulties = ["easy", "medium", "hard"]
     selected_idx = -1
@@ -96,6 +106,7 @@ def select_difficulty(screen, height):
         title = title_font.render("Select Gemini Difficulty", True, WHITE)
         screen.blit(title, (60, 40))
 
+        #display difficulty options
         for i, diff in enumerate(difficulties):
             color = YELLOW if i == selected_idx else WHITE
             text = menu_font.render(diff.capitalize(), True, color)
@@ -114,6 +125,7 @@ def select_difficulty(screen, height):
             elif event.type == pygame.MOUSEBUTTONDOWN and selected_idx != -1:
                 return difficulties[selected_idx]
 
+#main deterministic game loop (used for minimax, alpha-beta, gemini)
 def gui_game(player1_tuple, player2_tuple, rows, cols):
     player1_strategy, player1_label = player1_tuple
     player2_strategy, player2_label = player2_tuple
@@ -135,15 +147,15 @@ def gui_game(player1_tuple, player2_tuple, rows, cols):
                 pygame.quit()
                 sys.exit()
 
+    #Determine who's turn and which strategy to use
         current_player = PLAYER1_PIECE if turn % 2 == 1 else PLAYER2_PIECE
         strategy = player1_strategy if current_player == PLAYER1_PIECE else player2_strategy
         label = player1_label if current_player == PLAYER1_PIECE else player2_label
         player_name = f"Player {1 if current_player == PLAYER1_PIECE else 2}"
         player = game.players[0] if turn%2 == 1 else game.players[1]
 
-        
-
         if strategy == human_strategy:
+            #human turn: wait for mouse click
             draw_board(screen, grid, rows, cols, f"{player_name}'s Turn (You)")
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -152,6 +164,7 @@ def gui_game(player1_tuple, player2_tuple, rows, cols):
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     posx = event.pos[0]
                     col = int(posx / SQUARESIZE)
+                    #check win or tie
                     if grid.getGrid()[0][col] == EMPTY_SPACE:
                         grid.placePlayerPiece(col, current_player)
                         if grid.checkWin(CONNECT_TARGET, current_player):
@@ -171,6 +184,7 @@ def gui_game(player1_tuple, player2_tuple, rows, cols):
                             draw_board(screen, grid, rows, cols, "")
                         turn += 1
         else:
+            #AI turn: delay then call strategy function
             draw_board(screen, grid, rows, cols, f"{player_name}'s Turn ({label})")
             pygame.time.wait(800)
             if label == "Alpha-Beta":
@@ -197,6 +211,7 @@ def gui_game(player1_tuple, player2_tuple, rows, cols):
                     draw_board(screen, grid, rows, cols, "")
                 turn += 1
 
+        #exit loop if game has ended
         if game_over:
             while True:
                 for event in pygame.event.get():
@@ -204,10 +219,12 @@ def gui_game(player1_tuple, player2_tuple, rows, cols):
                         pygame.quit()
                         sys.exit()
 
+#game loop variant that handles randomness for Expectiminimax
 def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
     player1_strategy, player1_label = player1_tuple
     player2_strategy, player2_label = player2_tuple
 
+    #initlialize game environment and Pygame screen
     grid, game = setup_game(rows, cols)
     width = cols * SQUARESIZE
     height = (rows + 2) * SQUARESIZE
@@ -216,8 +233,11 @@ def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
 
     turn = 1
     game_over = False
+
+    #create an AdversarialSearch instance for managing vailid moves and randomness
     adversary = AdversarialSearch(rows,columns)
 
+    #draw the initial empty game board
     draw_board(screen, grid, rows, cols, "Game Start!")
 
     while not game_over:
@@ -226,16 +246,18 @@ def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
                 pygame.quit()
                 sys.exit()
 
+        #determine the current player based on the turn number
         current_player = PLAYER1_PIECE if turn % 2 == 1 else PLAYER2_PIECE
         strategy = player1_strategy if current_player == PLAYER1_PIECE else player2_strategy
         label = player1_label if current_player == PLAYER1_PIECE else player2_label
         player_name = f"Player {1 if current_player == PLAYER1_PIECE else 2}"
         player = game.players[0] if turn%2 == 1 else game.players[1]
         
-
+        #human strategy block
         if strategy == human_strategy:
-
+            #inject randomness every 4th turn based on the player
             if (current_player == PLAYER1_PIECE and turn%4 == 3) or (current_player == PLAYER2_PIECE and turn%4 == 0):
+                #display random move message
                 draw_board(screen, grid, rows, cols, f"{player_name}'s Random Move! ({label})")
                 moves = adversary.getValidMoves(grid.getGrid())
                 i = randint(0,len(moves)-1)
@@ -243,6 +265,7 @@ def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
                 pygame.time.wait(2000)
                 turn += 1
 
+                #check if the move results in a win or tie
                 if grid.checkWin(CONNECT_TARGET, current_player):
                         
                     draw_board(screen, grid, rows, cols, f"{player_name} wins!")
@@ -253,6 +276,7 @@ def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
                     game_over = True
 
             else:
+                #normal human turn - wait for mouse click input
                 draw_board(screen, grid, rows, cols, f"{player_name}'s Turn (You)")
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -274,8 +298,9 @@ def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
                             else:
                                 draw_board(screen, grid, rows, cols, "")
                             turn += 1
+        #AI strategy block
         else:
-
+            #Inject randomness for AI player every 4th turn
             if (current_player == PLAYER1_PIECE and turn%4 == 3) or (current_player == PLAYER2_PIECE and turn%4 == 0):
                 draw_board(screen, grid, rows, cols, f"{player_name}'s Random Move! ({label})")
                 moves = adversary.getValidMoves(grid.getGrid())
@@ -284,6 +309,7 @@ def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
                 pygame.time.wait(2000)
                 turn += 1
 
+                #check win or tie after each move
                 if grid.checkWin(CONNECT_TARGET, current_player):
                         
                     draw_board(screen, grid, rows, cols, f"{player_name} wins!")
@@ -296,6 +322,7 @@ def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
 
             
             else:
+                #AI makes a strategic move
                 draw_board(screen, grid, rows, cols, f"{player_name}'s Turn ({label})")
                 pygame.time.wait(800)
                 
@@ -304,6 +331,7 @@ def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
                 move = result if isinstance(result, int) else result[0]
                 if move is not None and grid.getGrid()[0][move] == EMPTY_SPACE:
                     grid.placePlayerPiece(move, current_player)
+                    #check if the AI's move results in a win or tie
                     if grid.checkWin(CONNECT_TARGET, current_player):
                         
                         draw_board(screen, grid, rows, cols, f"{player_name} wins!")
@@ -316,6 +344,7 @@ def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
                         draw_board(screen, grid, rows, cols, "")
                     turn += 1
 
+        #final game over screen loop (waits until user closes the window)
         if game_over:
             while True:
                 for event in pygame.event.get():
@@ -323,8 +352,9 @@ def stochastic_gui_game(player1_tuple, player2_tuple, rows, cols):
                         pygame.quit()
                         sys.exit()
 
+#entry point to launch GUI
 if __name__ == "__main__":
-    rows, columns = 6, 7  # Set board size
+    rows, columns = 6, 7  #set board size
 
     temp_screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption("Connect-4 Settings")
